@@ -29,13 +29,14 @@ struct CassetteWidget: View {
                 RoundedRectangle(cornerRadius: h * 0.07, style: .continuous)
                     .fill(shellColor)
                     .overlay(RoundedRectangle(cornerRadius: h * 0.07, style: .continuous).strokeBorder(.white.opacity(0.2), lineWidth: 1))
-                label(width: w * 0.86, height: h * 0.56)
-                    .offset(y: -h * 0.12)
+                label(width: w * 0.86, height: h * 0.6)
+                    .offset(y: -h * 0.1)
                 HStack(spacing: w * 0.2) {
-                    reel(radius: h * 0.2, pack: pack(1 - progress, h), angle: reelAngle(time: position, duration: duration, unwinding: true, h: h))
-                    reel(radius: h * 0.2, pack: pack(progress, h), angle: reelAngle(time: position, duration: duration, unwinding: false, h: h))
+                    reel(radius: h * 0.17, pack: pack(1 - progress, h), angle: reelAngle(time: position, duration: duration, unwinding: true, h: h))
+                    reel(radius: h * 0.17, pack: pack(progress, h), angle: reelAngle(time: position, duration: duration, unwinding: false, h: h))
                 }
-                .offset(y: -h * 0.1)
+                .background(RoundedRectangle(cornerRadius: h * 0.09, style: .continuous).fill(Color.black.opacity(0.55)).frame(width: w * 0.62, height: h * 0.38))
+                .offset(y: h * 0.05)
                 Trapezoid()
                     .fill(Color.black.opacity(0.35))
                     .frame(width: w * 0.56, height: h * 0.2)
@@ -55,12 +56,12 @@ struct CassetteWidget: View {
     }
 
     private func pack(_ fraction: Double, _ h: CGFloat) -> CGFloat {
-        let minR = h * 0.075, maxR = h * 0.19
+        let minR = h * 0.065, maxR = h * 0.155
         return sqrt(minR * minR + (maxR * maxR - minR * minR) * fraction)
     }
 
     private func reelAngle(time: Double, duration: Double, unwinding: Bool, h: CGFloat) -> Double {
-        let minR = Double(h) * 0.075, maxR = Double(h) * 0.19
+        let minR = Double(h) * 0.065, maxR = Double(h) * 0.155
         let b = (maxR * maxR - minR * minR) / duration
         let v = 2 * .pi * maxR / 2.2  // tape speed: a full reel turns about every 2.2 s
         let t = min(time, duration)
@@ -73,12 +74,7 @@ struct CassetteWidget: View {
     private func label(width: CGFloat, height: CGFloat) -> some View {
         let track = model.nowPlaying.track
         return VStack(alignment: .leading, spacing: 2) {
-            Text(track?.title ?? "Mixtape")
-                .font(.custom("Noteworthy-Bold", size: height * 0.17))
-                .lineLimit(1)
-            Text(track?.artist ?? "Side A")
-                .font(.custom("Noteworthy-Light", size: height * 0.13))
-                .opacity(0.7)
+            Text("\(Text(track?.title ?? "Mixtape").font(.custom("Noteworthy-Bold", size: height * 0.17)))   \(Text(track?.artist ?? "Side A").font(.custom("Noteworthy-Light", size: height * 0.12)).foregroundStyle(.secondary))")
                 .lineLimit(1)
             Spacer()
         }
@@ -90,8 +86,8 @@ struct CassetteWidget: View {
             LinearGradient(colors: [Color(red: 0.98, green: 0.95, blue: 0.86), Color(red: 0.95, green: 0.9, blue: 0.78)], startPoint: .top, endPoint: .bottom),
             in: .rect(cornerRadius: 4)
         )
-        .overlay(alignment: .bottom) {
-            Rectangle().fill(Theme.ember.opacity(0.85)).frame(height: height * 0.08).padding(.bottom, height * 0.36)
+        .overlay(alignment: .top) {
+            Rectangle().fill(Theme.ember.opacity(0.85)).frame(height: height * 0.05).padding(.top, height * 0.3)
         }
     }
 

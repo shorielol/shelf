@@ -30,6 +30,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         Theme.registerFonts()
+        if let directory = SnapshotRenderer.directory(from: ProcessInfo.processInfo.arguments) {
+            SnapshotRenderer.run(into: directory, model: model)
+            NSApp.terminate(nil)
+            return
+        }
         host.start()
         model.nowPlaying.start()
         if !model.onboardingCompleted || ProcessInfo.processInfo.arguments.contains("--onboarding") {

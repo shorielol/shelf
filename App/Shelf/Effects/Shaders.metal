@@ -156,6 +156,6 @@ static float fbm(float2 p) {
     float grid = smoothstep(0.0, 0.18, cell.x) * smoothstep(0.0, 0.18, cell.y);
     float2 uv = position / size - 0.5;
     float vignette = 1.0 - dot(uv, uv) * 0.55;
-    half shade = half(mix(0.86, 1.0, grid) * vignette);
+    half shade = half(mix(0.95, 1.0, grid) * vignette);
     return half4(color.rgb * shade, color.a);
 }

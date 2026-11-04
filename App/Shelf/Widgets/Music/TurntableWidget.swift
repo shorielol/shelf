@@ -30,10 +30,8 @@ struct TurntableWidget: View {
             ZStack {
                 plinth(size: size)
                 platterMat(diameter: recordDiameter * 1.04).position(recordCenter)
-                TimelineView(.animation(minimumInterval: 1.0 / 60.0, paused: reduceMotion || (!nowPlaying.isPlaying && !isSpinningDown(Date())))) { timeline in
-                    record(diameter: recordDiameter, angle: platterAngle(at: timeline.date))
-                }
-                .position(recordCenter)
+                record(diameter: recordDiameter)
+                    .position(recordCenter)
                 TimelineView(.animation(minimumInterval: 0.5, paused: !nowPlaying.isPlaying || armDrag != nil)) { timeline in
                     tonearm(pivot: pivot, recordCenter: recordCenter, recordRadius: recordDiameter / 2, size: size,
                             progress: armDrag ?? nowPlaying.clock.progress(at: timeline.date))
@@ -119,17 +117,20 @@ struct TurntableWidget: View {
             .shadow(color: .black.opacity(0.4), radius: 6, y: 3)
     }
 
-    private func record(diameter: CGFloat, angle: Double) -> some View {
-        let palette = model.nowPlaying.palette
+    /// The grooves and sheen are static (the light doesn't move), so only the label re-renders while spinning.
+    private func record(diameter: CGFloat) -> some View {
+        let nowPlaying = model.nowPlaying
         return ZStack {
             Rectangle()
                 .fill(.black)
-                .colorEffect(ShaderLibrary.vinylRecord(.float2(diameter, diameter), .color(palette.accent)))
-            ArtworkView(image: model.nowPlaying.artwork, cornerRadius: 0)
-                .frame(width: diameter * 0.36, height: diameter * 0.36)
-                .clipShape(Circle())
-                .overlay(Circle().fill(Color(white: 0.85)).frame(width: diameter * 0.022))
-                .rotationEffect(.degrees(angle))
+                .colorEffect(ShaderLibrary.vinylRecord(.float2(diameter, diameter), .color(nowPlaying.palette.accent)))
+            TimelineView(.animation(minimumInterval: 1.0 / 60.0, paused: reduceMotion || (!nowPlaying.isPlaying && !isSpinningDown(Date())))) { timeline in
+                ArtworkView(image: nowPlaying.artwork, cornerRadius: 0)
+                    .frame(width: diameter * 0.36, height: diameter * 0.36)
+                    .clipShape(Circle())
+                    .overlay(Circle().fill(Color(white: 0.85)).frame(width: diameter * 0.022))
+                    .rotationEffect(.degrees(platterAngle(at: timeline.date)))
+            }
         }
         .frame(width: diameter, height: diameter)
         .clipShape(Circle())
@@ -138,7 +139,7 @@ struct TurntableWidget: View {
     private func tonearm(pivot: CGPoint, recordCenter: CGPoint, recordRadius: CGFloat, size: CGSize, progress: Double) -> some View {
         let nowPlaying = model.nowPlaying
         let armLength = hypot(pivot.x - recordCenter.x, pivot.y - recordCenter.y) * 0.98
-        let restAngle = 12.0
+        let restAngle = -6.0
         // Angles where the stylus meets the outer and inner grooves.
         let outer = angleToReach(radius: recordRadius * 0.94, pivot: pivot, center: recordCenter, length: armLength)
         let inner = angleToReach(radius: recordRadius * 0.42, pivot: pivot, center: recordCenter, length: armLength)
@@ -191,7 +192,7 @@ struct TurntableWidget: View {
         let nowPlaying = model.nowPlaying
         let ink: Color = finish == .chalk ? .black.opacity(0.75) : .white.opacity(0.9)
         return VStack(alignment: .trailing, spacing: 6) {
-            if let track = nowPlaying.track, size.width > 260 {
+            if let track = nowPlaying.track, size.width > 260, !showsLyrics {
                 VStack(alignment: .trailing, spacing: 1) {
                     Text(track.title).font(Theme.Typeface.display(13)).lineLimit(1)
                     Text(track.artist).font(Theme.Typeface.caption).opacity(0.7).lineLimit(1)
@@ -208,15 +209,15 @@ struct TurntableWidget: View {
                 .accessibilityAddTraits(.isButton)
         }
         .foregroundStyle(ink)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: showsLyrics ? .trailing : .bottomTrailing)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
         .padding(size.height * 0.05)
-        .padding(.bottom, showsLyrics ? size.height * 0.2 : 0)
     }
 
     private func lyricStrip(size: CGSize) -> some View {
         LyricLineStrip(foreground: finish == .chalk ? .black : .white)
             .frame(height: size.height * 0.16)
-            .padding(.horizontal, size.width * 0.05)
+            .padding(.leading, size.width * 0.05)
+            .padding(.trailing, size.width * 0.32)
             .frame(maxHeight: .infinity, alignment: .bottom)
             .padding(.bottom, size.height * 0.04)
     }
@@ -233,26 +234,30 @@ struct LyricLineStrip: View {
         let lyrics = model.lyrics
         TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !nowPlaying.isPlaying)) { timeline in
             let time = lyrics.time(for: nowPlaying.clock.position(at: timeline.date))
-            let timeline2 = lyrics.timeline
-            if let index = timeline2.lineIndex(at: time), !timeline2.lines[index].isBreak {
-                let line = timeline2.lines[index]
-                Text(line.text)
-                    .font(font)
-                    .foregroundStyle(foreground)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.center)
-                    .minimumScaleFactor(0.7)
-                    .textRenderer(KaraokeRenderer(progress: LyricProgress.characters(of: line, wordProgress: timeline2.wordProgress(line: index, at: time))))
-                    .id(line.id)
-                    .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .move(edge: .top).combined(with: .opacity)))
-            } else {
-                Image(systemName: "music.note")
-                    .foregroundStyle(foreground.opacity(0.4))
-                    .transition(.opacity)
+            let lines = lyrics.timeline
+            let index = lines.lineIndex(at: time)
+            ZStack {
+                if let index, !lines.lines[index].isBreak {
+                    let line = lines.lines[index]
+                    Text(line.text)
+                        .font(font)
+                        .foregroundStyle(foreground)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.center)
+                        .minimumScaleFactor(0.7)
+                        .textRenderer(KaraokeRenderer(progress: LyricProgress.characters(of: line, wordProgress: lines.wordProgress(line: index, at: time))))
+                        .id(line.id)
+                        .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .move(edge: .top).combined(with: .opacity)))
+                } else {
+                    Image(systemName: "music.note")
+                        .foregroundStyle(foreground.opacity(0.4))
+                        .transition(.opacity)
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .clipped()
+            .animation(.spring(response: 0.45, dampingFraction: 0.86), value: index)
         }
-        .frame(maxWidth: .infinity)
-        .animation(.spring(response: 0.45, dampingFraction: 0.86), value: model.lyrics.timeline.lineIndex(at: model.lyrics.time(for: model.nowPlaying.clock.position(at: Date()))))
         .accessibilityLabel("Lyrics")
     }
 }

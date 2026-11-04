@@ -6,11 +6,13 @@ struct GlassSurface<S: Shape>: ViewModifier {
     var tint: Color?
     var interactive = false
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.rendersOffscreen) private var rendersOffscreen
 
     func body(content: Content) -> some View {
-        if reduceTransparency {
+        if reduceTransparency || rendersOffscreen {
             content
-                .background(Theme.graphiteRaised, in: shape)
+                .background((tint ?? Theme.graphiteRaised).opacity(rendersOffscreen ? 0.55 : 1), in: shape)
+                .background(Theme.graphiteRaised.opacity(0.6), in: shape)
                 .overlay(shape.stroke(Color.white.opacity(0.18), lineWidth: 1))
         } else {
             content.glassEffect(glass, in: shape)
@@ -37,4 +39,9 @@ extension View {
     func glassCircle(tint: Color? = nil, interactive: Bool = false) -> some View {
         modifier(GlassSurface(shape: Circle(), tint: tint, interactive: interactive))
     }
+}
+
+extension EnvironmentValues {
+    /// True inside `ImageRenderer`, where Liquid Glass has no backdrop to sample.
+    @Entry var rendersOffscreen = false
 }
