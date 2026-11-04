@@ -1,0 +1,80 @@
+name: Shelf
+options:
+  bundleIdPrefix: app.shelf
+  deploymentTarget:
+    macOS: "26.0"
+  createIntermediateGroups: true
+  developmentLanguage: en
+
+packages:
+  ShelfCore:
+    path: Packages/ShelfCore
+
+settings:
+  base:
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    MACOSX_DEPLOYMENT_TARGET: "26.0"
+    SWIFT_VERSION: "6.0"
+
+targets:
+  Shelf:
+    type: application
+    platform: macOS
+    sources:
+      - path: App/Shelf
+    dependencies:
+      - package: ShelfCore
+    info:
+      path: App/Shelf/Info.plist
+      properties:
+        CFBundleDisplayName: Shelf
+        CFBundleName: Shelf
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSApplicationCategoryType: public.app-category.utilities
+        LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
+        LSUIElement: true
+        NSHumanReadableCopyright: "Shelf is open source (MIT)."
+        NSAppleEventsUsageDescription: "Shelf reads what's playing in Music and Spotify so the music widgets can show the track, artwork and lyrics, and control playback."
+        NSCalendarsFullAccessUsageDescription: "Shelf shows your upcoming events in the Calendar and Up Next widgets."
+        NSRemindersFullAccessUsageDescription: "Shelf shows and checks off your reminders in the Reminders widget."
+        NSLocationWhenInUseUsageDescription: "Shelf uses your approximate location for the Weather and Sun & Moon widgets."
+        NSPhotoLibraryUsageDescription: "Shelf shows photos from an album you pick in the Photo Frame widget."
+        CFBundleURLTypes:
+          - CFBundleURLName: Shelf Link
+            CFBundleTypeRole: Viewer
+            CFBundleURLSchemes: [shelf]
+    entitlements:
+      path: App/Shelf/Shelf.entitlements
+      properties:
+        com.apple.security.app-sandbox: false
+        com.apple.security.automation.apple-events: true
+        com.apple.security.personal-information.calendars: true
+        com.apple.security.personal-information.location: true
+        com.apple.security.personal-information.photos-library: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.shelf.Shelf
+        PRODUCT_NAME: Shelf
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "-"
+        DEVELOPMENT_TEAM: ""
+        SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+        SWIFT_APPROACHABLE_CONCURRENCY: YES
+        SWIFT_STRICT_CONCURRENCY: complete
+        ENABLE_USER_SCRIPT_SANDBOXING: YES
+        DEAD_CODE_STRIPPING: YES
+
+schemes:
+  Shelf:
+    build:
+      targets:
+        Shelf: all
+    run:
+      config: Debug
+    archive:
+      config: Release

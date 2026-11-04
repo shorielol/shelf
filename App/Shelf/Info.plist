@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>Shelf</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>Shelf</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>CFBundleURLName</key>
+			<string>Shelf Link</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>shelf</string>
+			</array>
+		</dict>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.utilities</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Shelf reads what's playing in Music and Spotify so the music widgets can show the track, artwork and lyrics, and control playback.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Shelf shows your upcoming events in the Calendar and Up Next widgets.</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Shelf is open source (MIT).</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Shelf uses your approximate location for the Weather and Sun &amp; Moon widgets.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Shelf shows photos from an album you pick in the Photo Frame widget.</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>Shelf shows and checks off your reminders in the Reminders widget.</string>
+</dict>
+</plist>

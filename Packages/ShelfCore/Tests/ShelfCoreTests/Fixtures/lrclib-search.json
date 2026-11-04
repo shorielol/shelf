@@ -1,0 +1,5 @@
+[
+ {"id":1,"trackName":"Midnight City","artistName":"M83","albumName":"Live","duration":300.0,"instrumental":false,"plainLyrics":"live","syncedLyrics":"[00:01.00]live"},
+ {"id":2,"trackName":"Midnight City","artistName":"M83","albumName":"Hurry Up","duration":244.0,"instrumental":false,"plainLyrics":"plain only","syncedLyrics":null},
+ {"id":3,"trackName":"Midnight City","artistName":"M83","albumName":"Hurry Up","duration":242.0,"instrumental":false,"plainLyrics":"x","syncedLyrics":"[00:15.00]Waiting in a car"}
+]
