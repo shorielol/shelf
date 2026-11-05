@@ -108,6 +108,7 @@ struct WidgetContainer: View {
         if !descriptor.options.isEmpty {
             Button("Settings…") { showingSettings = true }
         }
+        Button(instance.isLocked ? "Unlock Position" : "Lock Position") { model.toggleLock(id) }
         Divider()
         Button(model.isEditing ? "Done Editing" : "Edit Widgets") { model.isEditing.toggle() }
         Button("Remove Widget", role: .destructive) { model.remove(id) }

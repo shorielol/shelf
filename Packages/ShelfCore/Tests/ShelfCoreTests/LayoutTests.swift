@@ -77,10 +77,10 @@ import Testing
         #expect(snapped.maxY <= 800 - 16)
     }
 
-    @Test func `sizes snap to the step too and never below the minimum`() {
+    @Test func `sizes are kept but never below the minimum`() {
         let snapper = GridSnapper(step: 8, margin: 0, minimumSide: 80)
         let snapped = snapper.snap(Rect(x: 0, y: 0, width: 171, height: 20), in: bounds)
-        #expect(snapped.width == 168)
+        #expect(snapped.width == 171)
         #expect(snapped.height == 80)
     }
 

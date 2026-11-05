@@ -6,7 +6,7 @@ import Testing
     let sep = NowPlayingParser.separator
 
     @Test func `parses a playing snapshot`() throws {
-        let raw = ["playing", "Midnight City", "M83", "Hurry Up, We're Dreaming", "243.5", "61.25", "ABC123", "https://i.scdn.co/image/x"].joined(separator: sep)
+        let raw = ["playing", "Midnight City", "M83", "Hurry Up, We're Dreaming", "243500", "61.25", "ABC123", "https://i.scdn.co/image/x"].joined(separator: sep)
         let snapshot = try #require(NowPlayingParser.parse(raw, source: .spotify))
         #expect(snapshot.isPlaying)
         #expect(snapshot.track.title == "Midnight City")

@@ -19,6 +19,9 @@ final class WeatherService: NSObject, CLLocationManagerDelegate {
 
     @ObservationIgnored private let manager = CLLocationManager()
     @ObservationIgnored private var inFlight: Set<String> = []
+    /// Last attempt per place, so a failing lookup is retried at most once a minute rather than on every redraw.
+    @ObservationIgnored private var lastAttempt: [String: Date] = [:]
+    static let retryInterval: TimeInterval = 60
     @ObservationIgnored nonisolated private static let logger = Logger(subsystem: "app.shelf", category: "weather")
     static let refreshInterval: TimeInterval = 20 * 60
 
@@ -54,6 +57,8 @@ final class WeatherService: NSObject, CLLocationManagerDelegate {
     private func load(_ city: String, fahrenheit: Bool) {
         let key = cacheKey(city, fahrenheit)
         guard !inFlight.contains(key) else { return }
+        if let last = lastAttempt[key], Date().timeIntervalSince(last) < Self.retryInterval { return }
+        lastAttempt[key] = Date()
         let trimmed = city.trimmingCharacters(in: .whitespaces)
         if trimmed.isEmpty, currentLocation == nil {
             requestLocation()
@@ -92,7 +97,7 @@ final class WeatherService: NSObject, CLLocationManagerDelegate {
         let status = manager.authorizationStatus
         MainActor.assumeIsolated {
             locationDenied = status == .denied || status == .restricted
-            if status == .authorizedAlways { self.manager.requestLocation() }
+            if status != .notDetermined, status != .denied, status != .restricted { self.manager.requestLocation() }
         }
     }
 

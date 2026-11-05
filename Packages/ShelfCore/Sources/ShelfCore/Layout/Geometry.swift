@@ -78,8 +78,9 @@ public struct GridSnapper: Sendable {
     }
 
     public func snap(_ rect: Rect, in bounds: Rect) -> Rect {
-        let width = max(minimumSide, round(rect.width / step) * step)
-        let height = max(minimumSide, round(rect.height / step) * step)
+        // Only the position snaps; sizes stay exact so widgets keep the system widget dimensions.
+        let width = max(minimumSide, rect.width)
+        let height = max(minimumSide, rect.height)
         let x = bounds.x + round((rect.x - bounds.x) / step) * step
         let y = bounds.y + round((rect.y - bounds.y) / step) * step
         let clampedX = min(max(x, bounds.x + margin), bounds.maxX - margin - width)

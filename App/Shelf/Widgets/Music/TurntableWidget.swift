@@ -8,7 +8,8 @@ struct TurntableWidget: View {
     @Environment(AppModel.self) private var model
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var armDrag: Double?
-    @State private var wasPlaying = false
+    /// True for the spin-down after a pause, so the platter timeline can stop once the record is still.
+    @State private var coasting = false
 
     private var finish: Finish { Finish(rawValue: context.string("finish", "walnut")) ?? .walnut }
     private var rpm: Double { context.string("speed", "33") == "45" ? 45 : 100.0 / 3.0 }
@@ -42,6 +43,15 @@ struct TurntableWidget: View {
         }
         .onChange(of: nowPlaying.isPlaying) { _, playing in
             if playing { Sounds.shared.play(.needle, volume: 0.6) }
+        }
+        .task(id: nowPlaying.isPlaying) {
+            guard !nowPlaying.isPlaying, isSpinningDown(Date()) else {
+                coasting = false
+                return
+            }
+            coasting = true
+            try? await Task.sleep(for: .seconds(Self.spinDown))
+            coasting = false
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(nowPlaying.track.map { "Turntable, \($0.title) by \($0.artist)" } ?? "Turntable, nothing playing")
@@ -124,7 +134,7 @@ struct TurntableWidget: View {
             Rectangle()
                 .fill(.black)
                 .colorEffect(ShaderLibrary.vinylRecord(.float2(diameter, diameter), .color(nowPlaying.palette.accent)))
-            TimelineView(.animation(minimumInterval: 1.0 / 60.0, paused: reduceMotion || (!nowPlaying.isPlaying && !isSpinningDown(Date())))) { timeline in
+            TimelineView(.animation(minimumInterval: 1.0 / 60.0, paused: reduceMotion || (!nowPlaying.isPlaying && !coasting))) { timeline in
                 ArtworkView(image: nowPlaying.artwork, cornerRadius: 0)
                     .frame(width: diameter * 0.36, height: diameter * 0.36)
                     .clipShape(Circle())

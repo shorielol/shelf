@@ -23,11 +23,12 @@ public struct LRCLIBRecord: Codable, Sendable, Equatable {
         self.syncedLyrics = syncedLyrics
     }
 
-    public func lyrics(duration trackDuration: TimeInterval?) -> Lyrics {
+    /// Nil when the record has no text and isn't marked instrumental, so a gap in the database isn't cached as "instrumental".
+    public func lyrics(duration trackDuration: TimeInterval?) -> Lyrics? {
         if instrumental { return Lyrics(kind: .instrumental, source: "", duration: trackDuration) }
         if let synced = syncedLyrics, !synced.isEmpty { return Lyrics(kind: .synced, source: synced, duration: trackDuration) }
         if let plain = plainLyrics, !plain.isEmpty { return Lyrics(kind: .plain, source: plain, duration: trackDuration) }
-        return Lyrics(kind: .instrumental, source: "", duration: trackDuration)
+        return nil
     }
 }
 
@@ -55,17 +56,20 @@ public struct LRCLIBClient: Sendable {
 
     public func lyrics(for track: Track) async -> Lyrics? {
         do {
+            var exact: Lyrics?
             if let request = Self.getRequest(for: track, userAgent: userAgent) {
                 let (data, status) = try await transport(request)
                 if status == 200, let record = try? JSONDecoder().decode(LRCLIBRecord.self, from: data) {
-                    return record.lyrics(duration: track.duration)
+                    exact = record.lyrics(duration: track.duration)
                 }
             }
-            guard let request = Self.searchRequest(for: track, userAgent: userAgent) else { return nil }
+            // Synced and instrumental answers are final; plain-only ones are worth one search for a synced version.
+            if let exact, exact.kind != .plain { return exact }
+            guard let request = Self.searchRequest(for: track, userAgent: userAgent) else { return exact }
             let (data, status) = try await transport(request)
-            guard status == 200 else { return nil }
-            let records = try JSONDecoder().decode([LRCLIBRecord].self, from: data)
-            return Self.bestMatch(records, duration: track.duration)?.lyrics(duration: track.duration)
+            guard status == 200, let records = try? JSONDecoder().decode([LRCLIBRecord].self, from: data) else { return exact }
+            let found = Self.bestMatch(records, duration: track.duration)?.lyrics(duration: track.duration)
+            return found?.kind == .synced ? found : (exact ?? found)
         } catch {
             Self.logger.error("Lyrics lookup failed: \(error.localizedDescription, privacy: .public)")
             return nil

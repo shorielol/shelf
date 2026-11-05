@@ -61,6 +61,12 @@ final class NowPlayingService {
         Task { await refresh() }
     }
 
+    @ObservationIgnored private var isRefreshing = false
+    @ObservationIgnored private var refreshQueued = false
+    @ObservationIgnored private var volumeTask: Task<Void, Never>?
+    @ObservationIgnored private var artworkAttempts = 0
+    static let maxArtworkAttempts = 3
+
     // MARK: Controls (optimistic, then confirmed by the next refresh)
 
     func playPause() {
@@ -79,10 +85,16 @@ final class NowPlayingService {
         send(.seek(seconds), to: source)
     }
 
+    /// The wheel can fire many detents a second; only the latest level is sent, 80 ms after the last change.
     func setVolume(_ level: Int) {
         guard let source else { return }
         volume = min(100, max(0, level))
-        send(.volume(volume), to: source)
+        volumeTask?.cancel()
+        volumeTask = Task { [volume, scripting] in
+            try? await Task.sleep(for: .milliseconds(80))
+            guard !Task.isCancelled else { return }
+            await scripting.send(.volume(volume), to: source)
+        }
     }
 
     private func send(_ command: PlayerScripting.Command, to source: PlayerSource) {
@@ -95,7 +107,21 @@ final class NowPlayingService {
 
     // MARK: Refresh
 
+    /// Overlapping refreshes collapse into one follow-up, so rapid controls can't pile scripts up on the queue.
     private func refresh() async {
+        guard !isRefreshing else {
+            refreshQueued = true
+            return
+        }
+        isRefreshing = true
+        defer { isRefreshing = false }
+        repeat {
+            refreshQueued = false
+            await refreshOnce()
+        } while refreshQueued
+    }
+
+    private func refreshOnce() async {
         let order: [PlayerSource] = preferred == .spotify ? [.spotify, .music] : [.music, .spotify]
         var chosen: NowPlayingSnapshot?
         for candidate in order {
@@ -125,8 +151,11 @@ final class NowPlayingService {
         clock = trackChanged
             ? PlaybackClock(position: next.position, anchor: now, isPlaying: next.isPlaying, duration: next.track.duration)
             : clock.reconciled(reported: next.position, at: now, isPlaying: next.isPlaying, duration: next.track.duration)
-        if artworkTrackID != next.track.id {
+        let artworkMissing = artwork == nil && artworkAttempts < Self.maxArtworkAttempts
+        if artworkTrackID != next.track.id || artworkMissing {
+            if artworkTrackID != next.track.id { artworkAttempts = 0 }
             artworkTrackID = next.track.id
+            artworkAttempts += 1
             Task { await loadArtwork(for: next) }
             Task { if let level = await scripting.volume(of: next.source) { volume = level } }
         }

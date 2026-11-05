@@ -69,8 +69,13 @@ final class LyricsService {
         }
     }
 
+    /// FNV-1a of the track id, so case-sensitive Spotify ids and punctuation never collide on disk.
     private func cacheURL(for track: Track) -> URL {
-        let safe = track.id.unicodeScalars.map { CharacterSet.alphanumerics.contains($0) ? String($0) : "_" }.joined()
-        return cacheDirectory.appending(path: "\(safe.prefix(120)).json")
+        var hash: UInt64 = 0xcbf2_9ce4_8422_2325
+        for byte in track.id.utf8 {
+            hash ^= UInt64(byte)
+            hash = hash &* 0x100_0000_01b3
+        }
+        return cacheDirectory.appending(path: String(hash, radix: 16) + ".json")
     }
 }

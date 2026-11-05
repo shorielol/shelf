@@ -8,6 +8,7 @@ final class OnboardingController {
     private let host: DesktopHost
     private let onClose: () -> Void
     private var window: NSWindow?
+    private var closeObserver: NSObjectProtocol?
 
     init(model: AppModel, host: DesktopHost, onClose: @escaping () -> Void) {
         self.model = model
@@ -29,7 +30,7 @@ final class OnboardingController {
         window.appearance = NSAppearance(named: .darkAqua)
         window.contentView = NSHostingView(rootView: OnboardingView(finish: { [weak self] layout in self?.finish(with: layout) }).environment(model))
         window.center()
-        NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { [weak self] _ in
+        closeObserver = NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.closed() }
         }
         self.window = window
@@ -65,6 +66,8 @@ final class OnboardingController {
 
     private func closed() {
         model.onboardingCompleted = true
+        if let closeObserver { NotificationCenter.default.removeObserver(closeObserver) }
+        closeObserver = nil
         window = nil
         onClose()
     }

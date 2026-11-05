@@ -19,7 +19,7 @@ final class Sounds {
     private var buffers: [Effect: AVAudioPCMBuffer] = [:]
     private var nextPlayer = 0
     private let format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1)!
-    private var isStarted = false
+    private var configurationObserver: NSObjectProtocol?
 
     private init() {
         for effect in Effect.allCases { buffers[effect] = synthesize(effect) }
@@ -30,12 +30,17 @@ final class Sounds {
             players.append(player)
         }
         engine.mainMixerNode.outputVolume = 0.55
+        engine.prepare()
+        // A route change (headphones, a new output device) stops the engine; start it again lazily on the next sound.
+        configurationObserver = NotificationCenter.default.addObserver(forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.engine.prepare() }
+        }
     }
 
     func play(_ effect: Effect, volume: Float = 1) {
         guard isEnabled, let buffer = buffers[effect] else { return }
-        if !isStarted {
-            do { try engine.start(); isStarted = true } catch { return }
+        if !engine.isRunning {
+            do { try engine.start() } catch { return }
         }
         let player = players[nextPlayer]
         nextPlayer = (nextPlayer + 1) % players.count

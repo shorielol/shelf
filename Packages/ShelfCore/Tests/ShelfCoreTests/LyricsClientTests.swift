@@ -54,7 +54,7 @@ private func fixture(_ name: String) throws -> Data {
 
     @Test func `instrumental records map to the instrumental kind`() throws {
         let record = LRCLIBRecord(id: 9, trackName: "x", artistName: "y", albumName: nil, duration: 100, instrumental: true, plainLyrics: nil, syncedLyrics: nil)
-        #expect(record.lyrics(duration: 100).kind == .instrumental)
+        #expect(record.lyrics(duration: 100)?.kind == .instrumental)
     }
 
     @Test func `network failure returns nil instead of throwing`() async {

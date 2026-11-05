@@ -8,8 +8,10 @@ public struct SunTimes: Sendable, Equatable {
 
     /// Nil during polar day or polar night.
     public init?(date: Date, latitude: Double, longitude: Double) {
-        let julianDay = date.timeIntervalSince1970 / 86_400 + 2_440_587.5
-        let dayStart = (julianDay - 0.5).rounded(.down) + 0.5  // Julian day at 00:00 UTC
+        // Pick the calendar day by local solar time, so evenings in the Americas and mornings in Asia
+        // get their own day rather than the UTC one.
+        let localDay = (date.timeIntervalSince1970 / 86_400 + longitude / 360).rounded(.down)
+        let dayStart = localDay + 2_440_587.5  // Julian day at 00:00 UTC of that day
         let t = (dayStart + 0.5 - 2_451_545.0) / 36_525  // centuries since J2000 at noon UTC
 
         let meanLongitude = (280.46646 + t * (36_000.76983 + t * 0.0003032)).truncatingRemainder(dividingBy: 360)
@@ -34,7 +36,7 @@ public struct SunTimes: Sendable, Equatable {
         let hourAngle = acos(cosHourAngle).degrees
 
         let noonMinutes = 720 - 4 * longitude - equationOfTime
-        let midnight = Date(timeIntervalSince1970: (dayStart - 2_440_587.5) * 86_400)
+        let midnight = Date(timeIntervalSince1970: localDay * 86_400)
         solarNoon = midnight.addingTimeInterval(noonMinutes * 60)
         sunrise = midnight.addingTimeInterval((noonMinutes - 4 * hourAngle) * 60)
         sunset = midnight.addingTimeInterval((noonMinutes + 4 * hourAngle) * 60)

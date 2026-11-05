@@ -35,10 +35,15 @@ final class AppModel {
     }
 
     init() {
-        layout = store.load() ?? WallLayout()
+        let loaded = store.load()
+        if loaded == nil { Self.quarantineUnreadableLayout(at: AppPaths.layout) }
+        layout = loaded ?? WallLayout()
         onboardingCompleted = UserDefaults.standard.bool(forKey: Keys.onboarding)
         snapToGrid = UserDefaults.standard.object(forKey: Keys.snap) as? Bool ?? true
-        nowPlaying.onTrackChange = { [weak self] track in self?.lyrics.update(for: track) }
+        nowPlaying.onTrackChange = { [weak self] track in
+            guard let self else { return }
+            lyrics.update(for: wantsLyrics ? track : nil)
+        }
     }
 
     var snapper: GridSnapper { GridSnapper(step: snapToGrid ? 8 : 1, margin: 12) }
@@ -95,8 +100,43 @@ final class AppModel {
     }
 
     private func setLayout(_ next: WallLayout) {
+        let hadLyrics = wantsLyrics
         layout = next
+        if wantsLyrics != hadLyrics { lyrics.update(for: wantsLyrics ? nowPlaying.track : nil) }
         scheduleSave()
+    }
+
+    /// Lyrics are only looked up while a widget on the desktop shows them, so track names aren't sent anywhere otherwise.
+    var wantsLyrics: Bool {
+        layout.widgets.contains { widget in
+            switch widget.kind {
+            case "lyrics", "clickwheel": true
+            case "turntable": widget.config.bool("lyrics", default: true) ?? true
+            default: false
+            }
+        }
+    }
+
+    /// Writes any pending change immediately. Called on quit.
+    func flush() {
+        saveTask?.cancel()
+        do {
+            try store.save(layout)
+        } catch {
+            Self.logger.error("Saving layout on quit failed: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    /// A layout file that exists but won't decode is moved aside rather than overwritten by the next save.
+    private static func quarantineUnreadableLayout(at url: URL) {
+        let manager = FileManager.default
+        guard manager.fileExists(atPath: url.path), (try? Data(contentsOf: url)).map({ $0.count > 2 }) == true,
+              JSONFileStore<WallLayout>(url: url).load() == nil else { return }
+        let stamp = Int(Date().timeIntervalSince1970)
+        let destination = AppPaths.backups.appending(path: "layout-unreadable-\(stamp).json")
+        try? manager.createDirectory(at: AppPaths.backups, withIntermediateDirectories: true)
+        try? manager.moveItem(at: url, to: destination)
+        logger.error("Layout file could not be read; moved it to \(destination.path, privacy: .public)")
     }
 
     /// Debounced so a drag doesn't write on every frame.

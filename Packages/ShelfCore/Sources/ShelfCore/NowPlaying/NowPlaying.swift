@@ -55,9 +55,6 @@ public struct NowPlayingSnapshot: Sendable, Equatable {
 /// state, title, artist, album, duration, position, id, artwork URL.
 public enum NowPlayingParser {
     public static let separator = "\u{1F}"
-    /// Spotify reports duration in milliseconds; no song is longer than this many seconds.
-    static let millisecondThreshold: Double = 36_000
-
     public static func parse(_ raw: String, source: PlayerSource) -> NowPlayingSnapshot? {
         let fields = raw.components(separatedBy: separator)
         guard fields.count >= 8 else { return nil }
@@ -67,7 +64,8 @@ public enum NowPlayingParser {
         guard !title.isEmpty else { return nil }
 
         var duration = number(fields[4])
-        if let value = duration, value > millisecondThreshold { duration = value / 1000 }
+        // Spotify reports duration in milliseconds, Music in seconds.
+        if source == .spotify, let value = duration { duration = value / 1000 }
         let position = max(0, number(fields[5]) ?? 0)
         let rawID = fields[6].trimmingCharacters(in: .whitespaces)
         let id = rawID.isEmpty ? stableID(title: title, artist: artist, album: album) : rawID
