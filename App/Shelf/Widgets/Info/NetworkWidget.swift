@@ -60,13 +60,12 @@ private struct ChannelView: View {
                     .foregroundStyle(channel.color)
                 Text(parts.value)
                     .font(Theme.Typeface.numeral(compact ? 17 : 24))
-                    .contentTransition(.numericText())
+
                 Text(parts.unit)
                     .font(Theme.Typeface.caption)
                     .foregroundStyle(Theme.textSecondary)
             }
             .lineLimit(1)
-            .animation(reduceMotion ? nil : Theme.Motion.standard, value: parts.value)
             InfoSparkline(history: channel.history, color: channel.color, ceiling: channel.ceiling)
                 .frame(maxHeight: .infinity)
             if !compact {

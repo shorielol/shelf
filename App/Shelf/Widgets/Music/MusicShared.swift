@@ -113,8 +113,9 @@ struct Scrubber: View {
     }
 }
 
-/// Lights each glyph of a lyric line as the song reaches it, with a soft leading edge.
-struct KaraokeRenderer: TextRenderer, Animatable {
+/// Lights a lyric line up to the singer's position. Each laid-out line is drawn twice (dimmed, then lit
+/// and clipped at the highlight) rather than glyph by glyph, which matters for complex scripts.
+nonisolated struct KaraokeRenderer: TextRenderer, Animatable {
     var progress: Double
     var dimOpacity: Double = 0.38
 
@@ -124,20 +125,40 @@ struct KaraokeRenderer: TextRenderer, Animatable {
     }
 
     func draw(layout: Text.Layout, in context: inout GraphicsContext) {
-        let total = layout.reduce(0) { $0 + $1.reduce(0) { $0 + $1.count } }
-        let lit = progress * Double(total)
+        let counts = layout.map { line in line.reduce(0) { $0 + $1.count } }
+        var remaining = progress * Double(counts.reduce(0, +))
+        for (line, count) in zip(layout, counts) {
+            let lit = min(Double(count), max(0, remaining))
+            remaining -= Double(count)
+            if lit >= Double(count) {
+                context.draw(line)
+                continue
+            }
+            var dim = context
+            dim.opacity = dimOpacity
+            dim.draw(line)
+            guard lit > 0 else { continue }
+            let bounds = line.typographicBounds.rect
+            var lightened = context
+            lightened.clip(to: Path(CGRect(x: bounds.minX - 2, y: bounds.minY - 6,
+                                           width: Self.cutoff(in: line, lit: lit) - bounds.minX + 2, height: bounds.height + 12)))
+            lightened.draw(line)
+        }
+    }
+
+    /// x position `lit` glyphs into the line, interpolating inside the glyph at the edge.
+    private static func cutoff(in line: Text.Layout.Line, lit: Double) -> CGFloat {
         var index = 0.0
-        for line in layout {
-            for run in line {
-                for slice in run {
-                    var copy = context
-                    let amount = min(1, max(0, lit - index))
-                    copy.opacity = dimOpacity + (1 - dimOpacity) * amount
-                    copy.draw(slice)
-                    index += 1
-                }
+        var x = line.typographicBounds.rect.minX
+        for run in line {
+            for slice in run {
+                let rect = slice.typographicBounds.rect
+                if index + 1 > lit { return rect.minX + rect.width * CGFloat(lit - index) }
+                x = rect.maxX
+                index += 1
             }
         }
+        return x
     }
 }
 

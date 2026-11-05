@@ -74,6 +74,8 @@ struct LyricsWidget: View {
 }
 
 /// A vertically scrolling stack of lyric lines centred on the active one.
+/// The column itself only re-evaluates four times a second (enough to move to the next line); just the
+/// line being sung animates its word wipe, so the blurred neighbours aren't redrawn every frame.
 struct LyricsColumn: View {
     @Environment(AppModel.self) private var model
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -85,7 +87,7 @@ struct LyricsColumn: View {
     var body: some View {
         let nowPlaying = model.nowPlaying
         let lyrics = model.lyrics
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !nowPlaying.isPlaying)) { timeline in
+        TimelineView(.periodic(from: .now, by: nowPlaying.isPlaying ? 0.5 : 3600)) { timeline in
             let time = lyrics.time(for: nowPlaying.clock.position(at: timeline.date))
             let lines = lyrics.timeline.lines
             let active = lyrics.timeline.lineIndex(at: time) ?? -1
@@ -94,7 +96,7 @@ struct LyricsColumn: View {
             VStack(spacing: 10) {
                 if !lines.isEmpty {
                     ForEach(lines[range]) { line in
-                        lineView(line, active: active, time: time)
+                        lineView(line, active: active)
                     }
                 }
             }
@@ -106,16 +108,16 @@ struct LyricsColumn: View {
     }
 
     @ViewBuilder
-    private func lineView(_ line: LyricLine, active: Int, time: TimeInterval) -> some View {
+    private func lineView(_ line: LyricLine, active: Int) -> some View {
         let distance = abs(line.id - active)
         let isActive = line.id == active
-        let progress = isActive ? LyricProgress.characters(of: line, wordProgress: model.lyrics.timeline.wordProgress(line: line.id, at: time)) : (line.id < active ? 1 : 0)
         Group {
             if line.isBreak {
                 Image(systemName: "ellipsis").symbolEffect(.variableColor.iterative, isActive: isActive)
+            } else if isActive {
+                SungLine(line: line, font: font)
             } else {
                 Text(line.text)
-                    .textRenderer(KaraokeRenderer(progress: isActive ? progress : 0, dimOpacity: isActive ? 0.4 : 1))
             }
         }
         .font(font)
@@ -128,5 +130,24 @@ struct LyricsColumn: View {
         .blur(radius: isActive ? 0 : min(2.5, Double(distance) * 0.8))
         .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .move(edge: .top).combined(with: .opacity)))
         .accessibilityHidden(!isActive)
+    }
+}
+
+/// The line being sung. Its own 15 fps timeline drives the word wipe and nothing else.
+private struct SungLine: View {
+    @Environment(AppModel.self) private var model
+    let line: LyricLine
+    let font: Font
+
+    var body: some View {
+        let nowPlaying = model.nowPlaying
+        let lyrics = model.lyrics
+        TimelineView(.animation(minimumInterval: 1.0 / 10.0, paused: !nowPlaying.isPlaying)) { timeline in
+            let time = lyrics.time(for: nowPlaying.clock.position(at: timeline.date))
+            let progress = LyricProgress.characters(of: line, wordProgress: lyrics.timeline.wordProgress(line: line.id, at: time))
+            Text(line.text)
+                .font(font)
+                .textRenderer(KaraokeRenderer(progress: progress, dimOpacity: 0.4))
+        }
     }
 }

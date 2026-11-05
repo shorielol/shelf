@@ -17,6 +17,9 @@ final class SystemStats {
     @ObservationIgnored private var lastTicks: CPUTicks?
     @ObservationIgnored private var inMeter = RateMeter()
     @ObservationIgnored private var outMeter = RateMeter()
+    @ObservationIgnored private var samples = 0
+    /// Disk and battery barely move, and reading the battery's IORegistry entry isn't free; check them every 30 s.
+    static let slowEvery = 15
 
     static let interval: Duration = .seconds(2)
 
@@ -50,7 +53,10 @@ final class SystemStats {
             if let rate = inMeter.sample(total: totals.received, at: now) { download.append(rate) }
             if let rate = outMeter.sample(total: totals.sent, at: now) { upload.append(rate) }
         }
-        disk = DiskMeter.usedFraction() ?? disk
-        battery = BatteryInfo.current()
+        if samples % Self.slowEvery == 0 {
+            disk = DiskMeter.usedFraction() ?? disk
+            battery = BatteryInfo.current()
+        }
+        samples += 1
     }
 }

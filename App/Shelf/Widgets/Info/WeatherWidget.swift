@@ -174,8 +174,11 @@ private struct WeatherSky: View {
 
     var body: some View {
         let index = Double(WeatherCondition.allCases.firstIndex(of: condition) ?? 0)
-        let still = reduceMotion || (condition == .clear && isDay)
-        TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: still)) { timeline in
+        // Only falling weather moves. A drifting cloud costs a redraw of the glass card every frame for
+        // motion nobody notices, so clear and cloudy skies render once.
+        let falling = [.drizzle, .rain, .snow, .thunderstorm].contains(condition)
+        let still = reduceMotion || !falling
+        TimelineView(.animation(minimumInterval: 1.0 / 15.0, paused: still)) { timeline in
             let time = still ? 40 : timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 3600)
             GeometryReader { proxy in
                 Rectangle()

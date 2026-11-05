@@ -23,7 +23,6 @@ struct SystemWidget: View {
             case .large: large(meters, stats: stats)
             }
         }
-        .animation(reduceMotion ? nil : Theme.Motion.standard, value: meters.map { $0.value ?? -1 })
         .watchesSystemStats()
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("System")
@@ -38,7 +37,7 @@ struct SystemWidget: View {
                 ForEach(meters) { meter in
                     VStack(spacing: 1) {
                         Text(meter.text).font(Theme.Typeface.numeral(14)).foregroundStyle(meter.color)
-                            .contentTransition(.numericText())
+
                         Text(meter.shortLabel).font(Theme.Typeface.eyebrow).foregroundStyle(Theme.textTertiary)
                     }
                     .frame(maxWidth: .infinity)
@@ -70,7 +69,7 @@ struct SystemWidget: View {
                     VStack(spacing: Theme.Space.s) {
                         ZStack {
                             GaugeRing(value: meter.value ?? 0, color: meter.color, lineWidth: 9)
-                            Text(meter.text).font(Theme.Typeface.numeral(17)).contentTransition(.numericText())
+                            Text(meter.text).font(Theme.Typeface.numeral(17))
                         }
                         .frame(width: 84, height: 84)
                         Text(meter.label).font(Theme.Typeface.caption).foregroundStyle(Theme.textSecondary)
@@ -107,7 +106,7 @@ private struct HistoryRow: View {
                 Text(meter.label).font(Theme.Typeface.caption).foregroundStyle(Theme.textSecondary)
                 Spacer()
                 Text(meter.text).font(Theme.Typeface.numeral(12, weight: .medium)).foregroundStyle(meter.color)
-                    .contentTransition(.numericText())
+
             }
             InfoSparkline(history: history, color: meter.color, ceiling: 1).frame(height: chartHeight)
         }
@@ -155,6 +154,8 @@ private struct GaugeRing: View {
                 .rotationEffect(.degrees(-90))
         }
         .padding(lineWidth / 2)
+        // Conic gradients are shaded on the CPU by Core Graphics; flattening into Metal keeps redraws cheap.
+        .drawingGroup()
         .accessibilityHidden(true)
     }
 }

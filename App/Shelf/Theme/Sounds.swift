@@ -20,6 +20,9 @@ final class Sounds {
     private var nextPlayer = 0
     private let format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1)!
     private var configurationObserver: NSObjectProtocol?
+    private var idleStop: Task<Void, Never>?
+    /// A running engine renders silence and keeps the audio hardware awake, so it stops soon after the last sound.
+    static let idleTimeout: Duration = .seconds(2)
 
     private init() {
         for effect in Effect.allCases { buffers[effect] = synthesize(effect) }
@@ -47,6 +50,13 @@ final class Sounds {
         player.volume = volume
         player.scheduleBuffer(buffer, at: nil, options: .interrupts)
         if !player.isPlaying { player.play() }
+        idleStop?.cancel()
+        idleStop = Task { [weak self] in
+            try? await Task.sleep(for: Self.idleTimeout)
+            guard !Task.isCancelled, let self else { return }
+            self.players.forEach { $0.stop() }
+            self.engine.stop()
+        }
     }
 
     private func synthesize(_ effect: Effect) -> AVAudioPCMBuffer? {

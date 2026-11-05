@@ -39,7 +39,7 @@ struct AnalogClockWidget: View {
     @ViewBuilder
     private func hands(diameter: CGFloat) -> some View {
         if face == .railway && showsSeconds && !reduceMotion {
-            TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
+            TimelineView(.periodic(from: .now, by: 1)) { timeline in // every redraw of a glass widget costs real CPU, so the hand steps once a second along its 58.5 s lap
                 ClockHands(face: face, angles: angles(at: timeline.date), diameter: diameter, showsSeconds: true)
             }
         } else {

@@ -7,6 +7,7 @@ struct TurntableWidget: View {
     let context: WidgetContext
     @Environment(AppModel.self) private var model
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.rendersOffscreen) private var rendersOffscreen
     @State private var armDrag: Double?
     /// True for the spin-down after a pause, so the platter timeline can stop once the record is still.
     @State private var coasting = false
@@ -127,20 +128,25 @@ struct TurntableWidget: View {
             .shadow(color: .black.opacity(0.4), radius: 6, y: 3)
     }
 
-    /// The grooves and sheen are static (the light doesn't move), so only the label re-renders while spinning.
+    /// The grooves and sheen are static (the light doesn't move); the label spins on Core Animation.
     private func record(diameter: CGFloat) -> some View {
         let nowPlaying = model.nowPlaying
         return ZStack {
             Rectangle()
                 .fill(.black)
                 .colorEffect(ShaderLibrary.vinylRecord(.float2(diameter, diameter), .color(nowPlaying.palette.accent)))
-            TimelineView(.animation(minimumInterval: 1.0 / 60.0, paused: reduceMotion || (!nowPlaying.isPlaying && !coasting))) { timeline in
-                ArtworkView(image: nowPlaying.artwork, cornerRadius: 0)
-                    .frame(width: diameter * 0.36, height: diameter * 0.36)
-                    .clipShape(Circle())
-                    .overlay(Circle().fill(Color(white: 0.85)).frame(width: diameter * 0.022))
-                    .rotationEffect(.degrees(platterAngle(at: timeline.date)))
+            Group {
+                if rendersOffscreen {
+                    // Snapshots can't capture an AppKit layer, so they get a still label at a pleasing angle.
+                    ArtworkView(image: nowPlaying.artwork, cornerRadius: 0)
+                        .clipShape(Circle())
+                        .rotationEffect(.degrees(-28))
+                } else {
+                    SpinningLabel(image: nowPlaying.artwork, degreesPerSecond: rpm * 6, isSpinning: nowPlaying.isPlaying && !reduceMotion)
+                }
             }
+            .frame(width: diameter * 0.36, height: diameter * 0.36)
+            .overlay(Circle().fill(Color(white: 0.85)).frame(width: diameter * 0.022))
         }
         .frame(width: diameter, height: diameter)
         .clipShape(Circle())
@@ -242,7 +248,7 @@ struct LyricLineStrip: View {
     var body: some View {
         let nowPlaying = model.nowPlaying
         let lyrics = model.lyrics
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !nowPlaying.isPlaying)) { timeline in
+        TimelineView(.animation(minimumInterval: 1.0 / 10.0, paused: !nowPlaying.isPlaying)) { timeline in
             let time = lyrics.time(for: nowPlaying.clock.position(at: timeline.date))
             let lines = lyrics.timeline
             let index = lines.lineIndex(at: time)

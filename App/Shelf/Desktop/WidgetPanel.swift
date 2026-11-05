@@ -53,6 +53,8 @@ final class WidgetPanel: NSPanel {
         contentView = hosting
         // Widgets spend most of the day under app windows. When a panel is fully covered, hide its
         // content so animations stop drawing; the window server still reports when it's uncovered.
+        // SHELF_ALWAYS_DRAW=1 keeps drawing while covered, for capturing panels in tests.
+        guard ProcessInfo.processInfo.environment["SHELF_ALWAYS_DRAW"] == nil else { return }
         occlusionObserver = NotificationCenter.default.addObserver(forName: NSWindow.didChangeOcclusionStateNotification, object: self, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self else { return }

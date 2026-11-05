@@ -44,7 +44,7 @@ A few details worth knowing about:
 - The click wheel changes volume by one step for every 15° you turn it, with a tick and trackpad haptics. MENU switches between Now Playing, Lyrics and a cover view.
 - The cassette's reels turn at the speed real tape would make them: the fuller reel turns slower, and the tape moves from left to right over the length of the song.
 - Lyrics come from [LRCLIB](https://lrclib.net). When a song has word-level timing the highlight follows each word; otherwise it sweeps across the line at a natural reading pace. If the lyrics run early or late, nudge them in Settings.
-- The flip clock folds its cards on a hinge, the railway clock's second hand sweeps round in 58.5 seconds and waits at twelve, and the word clock spells the time in a grid of letters.
+- The flip clock folds its cards on a hinge, the railway clock's red second hand makes its lap in 58.5 seconds and waits at twelve, and the word clock spells the time in a grid of letters.
 - Weather draws its own sky (rain, snow, fog, a thunderstorm) and works from your location or a city you type in.
 - Ambient Sound makes its rain, fireplace and coloured noise in real time, so there are no loops to hear repeating. Desk Buddy is a small round creature that watches your cursor and gets sleepy after 10 pm.
 

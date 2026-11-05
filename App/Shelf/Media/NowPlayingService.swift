@@ -155,11 +155,13 @@ final class NowPlayingService {
             return
         }
         let trackChanged = next.track != snapshot?.track
-        if snapshot != next { snapshot = next }
+        // Position changes every poll; only republish when something a widget shows has changed.
+        if trackChanged || next.isPlaying != snapshot?.isPlaying || next.artworkURL != snapshot?.artworkURL { snapshot = next }
         if trackChanged { onTrackChange?(next.track) }
-        clock = trackChanged
+        let nextClock = trackChanged
             ? PlaybackClock(position: next.position, anchor: now, isPlaying: next.isPlaying, duration: next.track.duration)
             : clock.reconciled(reported: next.position, at: now, isPlaying: next.isPlaying, duration: next.track.duration)
+        if nextClock != clock { clock = nextClock }
         let artworkMissing = artwork == nil && artworkAttempts < Self.maxArtworkAttempts
         if artworkTrackID != next.track.id || artworkMissing {
             if artworkTrackID != next.track.id { artworkAttempts = 0 }
