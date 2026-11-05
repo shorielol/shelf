@@ -37,7 +37,7 @@ enum SnapshotRenderer {
     private static func render(gallery model: AppModel, to url: URL) {
         let columns = Array(repeating: GridItem(.fixed(240), spacing: 24), count: 5)
         let view = LazyVGrid(columns: columns, spacing: 24) {
-            ForEach(WidgetCatalog.all) { descriptor in
+            ForEach(galleryWidgets) { descriptor in
                 let side = descriptor.defaultSize.side
                 let scale = min(240 / side.width, 200 / side.height)
                 descriptor.make(WidgetContext(id: UUID(), config: descriptor.defaultConfig, size: CGSize(width: side.width, height: side.height), isEditing: false) { _, _ in })
@@ -55,11 +55,20 @@ enum SnapshotRenderer {
         write(view, to: url)
     }
 
+    /// `SHELF_GALLERY_KINDS=a,b` limits the gallery image to those widgets.
+    private static var galleryWidgets: [WidgetDescriptor] {
+        guard let filter = ProcessInfo.processInfo.environment["SHELF_GALLERY_KINDS"] else { return WidgetCatalog.all }
+        let kinds = Set(filter.split(separator: ",").map(String.init))
+        return WidgetCatalog.all.filter { kinds.contains($0.kind) }
+    }
+
     private static func write(_ view: some View, to url: URL) {
         let renderer = ImageRenderer(content: view)
         renderer.scale = 2
-        guard let image = renderer.nsImage, let tiff = image.tiffRepresentation,
-              let png = NSBitmapImageRep(data: tiff)?.representation(using: .png, properties: [:]) else { return }
+        // App icons can push the render into a wide-gamut format; convert to sRGB so the PNG reads correctly everywhere.
+        guard let image = renderer.cgImage,
+              let srgb = NSBitmapImageRep(cgImage: image).converting(to: .sRGB, renderingIntent: .default),
+              let png = srgb.representation(using: .png, properties: [:]) else { return }
         try? png.write(to: url)
     }
 }
