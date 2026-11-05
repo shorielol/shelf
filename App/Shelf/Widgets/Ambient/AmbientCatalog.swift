@@ -50,5 +50,20 @@ extension WidgetCatalog {
             isFreeform: true,
             make: { AnyView(StickersWidget(context: $0)) }
         ),
+        WidgetDescriptor(
+            kind: "life", name: "Life", summary: "Conway's Game of Life, quietly glowing away.",
+            symbol: "circle.grid.3x3", category: .ambient, sizes: [.small, .medium, .large], defaultSize: .medium,
+            make: { AnyView(LifeWidget(context: $0)) }
+        ),
+        WidgetDescriptor(
+            kind: "deskbuddy", name: "Desk Buddy", summary: "A small round friend who watches your cursor and naps at night.",
+            symbol: "face.smiling", category: .ambient, sizes: [.small], defaultSize: .small,
+            defaultConfig: ["coat": .string("cream")],
+            options: [
+                .choice(key: "coat", label: "Colour", options: DeskBuddyWidget.Coat.allCases.map { ($0.rawValue, $0.label) }),
+            ],
+            isFreeform: true,
+            make: { AnyView(DeskBuddyWidget(context: $0)) }
+        ),
     ]
 }

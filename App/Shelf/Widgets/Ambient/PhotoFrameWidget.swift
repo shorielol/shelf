@@ -10,6 +10,7 @@ struct PhotoFrameWidget: View {
     @State private var phase: LoadPhase = .scanning
     @State private var slide: Slide?
     @State private var cursor = 0
+    @State private var scanCount = 0
 
     private enum LoadPhase { case scanning, empty, ready }
 
@@ -21,6 +22,7 @@ struct PhotoFrameWidget: View {
     }
 
     private struct RotationKey: Equatable {
+        let scan: Int
         let count: Int
         let cursor: Int
         let interval: Double
@@ -37,7 +39,7 @@ struct PhotoFrameWidget: View {
         content
             .frame(width: context.size.width, height: context.size.height)
             .task(id: folder) { await scan() }
-            .task(id: RotationKey(count: urls.count, cursor: cursor, interval: interval, pixels: pixels)) { await rotate() }
+            .task(id: RotationKey(scan: scanCount, count: urls.count, cursor: cursor, interval: interval, pixels: pixels)) { await rotate() }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Photo frame")
             .accessibilityValue(accessibilityValue)
@@ -67,6 +69,7 @@ struct PhotoFrameWidget: View {
         let found = await PhotoLibrary.imageURLs(in: folder)
         guard !Task.isCancelled else { return }
         urls = found
+        scanCount += 1
         cursor = 0
         slide = nil
         phase = found.isEmpty ? .empty : .ready
