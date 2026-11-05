@@ -10,8 +10,10 @@ enum SnapshotRenderer {
         return URL(fileURLWithPath: arguments[index + 1], isDirectory: true)
     }
 
-    static func run(into directory: URL, model: AppModel) {
+    static func run(into directory: URL, model: AppModel) async {
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        await DemoContent.load(into: model)
+        render(hero: model, to: directory.appending(path: "hero.png"))
         for descriptor in WidgetCatalog.all {
             for size in descriptor.sizes {
                 render(descriptor, size: size, model: model, to: directory.appending(path: "\(descriptor.kind)-\(size.rawValue).png"))
@@ -32,6 +34,47 @@ enum SnapshotRenderer {
             .environment(\.colorScheme, .dark)
             .environment(\.rendersOffscreen, true)
         write(view, to: url)
+    }
+
+    /// A composed desktop for the top of the README.
+    private static func render(hero model: AppModel, to url: URL) {
+        let view = HStack(alignment: .top, spacing: 32) {
+            VStack(spacing: 28) {
+                widget("turntable", .large)
+                widget("flipclock", .medium)
+            }
+            VStack(spacing: 28) {
+                widget("lyrics", .large)
+                HStack(spacing: 24) {
+                    widget("weather", .small)
+                    widget("lavalamp", .small)
+                }
+            }
+            VStack(spacing: 28) {
+                widget("clickwheel", .large)
+                HStack(spacing: 24) {
+                    widget("sticky", .small)
+                    widget("deskbuddy", .small)
+                }
+            }
+        }
+        .padding(56)
+        .background(Backdrop())
+        .environment(model)
+        .environment(\.colorScheme, .dark)
+        .environment(\.rendersOffscreen, true)
+        write(view, to: url)
+    }
+
+    @ViewBuilder
+    private static func widget(_ kind: String, _ size: WidgetSize) -> some View {
+        if let descriptor = WidgetCatalog.descriptor(for: kind) {
+            let side = CGSize(width: size.side.width, height: size.side.height)
+            descriptor.make(WidgetContext(id: UUID(), config: descriptor.defaultConfig, size: side, isEditing: false) { _, _ in })
+                .frame(width: side.width, height: side.height)
+                .clipShape(.rect(cornerRadius: descriptor.isFreeform ? 0 : Theme.Radius.widget, style: .continuous))
+                .shadow(color: .black.opacity(0.3), radius: 14, y: 8)
+        }
     }
 
     private static func render(gallery model: AppModel, to url: URL) {

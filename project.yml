@@ -40,7 +40,6 @@ targets:
         NSCalendarsFullAccessUsageDescription: "Shelf shows your upcoming events in the Calendar and Up Next widgets."
         NSRemindersFullAccessUsageDescription: "Shelf shows and checks off your reminders in the Reminders widget."
         NSLocationWhenInUseUsageDescription: "Shelf uses your approximate location for the Weather and Sun & Moon widgets."
-        NSPhotoLibraryUsageDescription: "Shelf shows photos from an album you pick in the Photo Frame widget."
         CFBundleURLTypes:
           - CFBundleURLName: Shelf Link
             CFBundleTypeRole: Viewer
@@ -52,7 +51,6 @@ targets:
         com.apple.security.automation.apple-events: true
         com.apple.security.personal-information.calendars: true
         com.apple.security.personal-information.location: true
-        com.apple.security.personal-information.photos-library: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.shelf.Shelf

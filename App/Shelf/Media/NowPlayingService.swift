@@ -67,6 +67,15 @@ final class NowPlayingService {
     @ObservationIgnored private var artworkAttempts = 0
     static let maxArtworkAttempts = 3
 
+    /// Fills in a made-up track for `--snapshot` renders. Never called in normal use.
+    func loadDemo(_ demo: NowPlayingSnapshot, artwork image: NSImage) async {
+        snapshot = demo
+        clock = PlaybackClock(position: demo.position, anchor: Date(), isPlaying: demo.isPlaying, duration: demo.track.duration)
+        artwork = image
+        artworkTrackID = demo.track.id
+        palette = await ArtworkPalette.extract(from: image)
+    }
+
     // MARK: Controls (optimistic, then confirmed by the next refresh)
 
     func playPause() {

@@ -42,6 +42,14 @@ final class WeatherService: NSObject, CLLocationManagerDelegate {
         return nil
     }
 
+    /// Stores a forecast for "here" in both units, for `--snapshot` renders.
+    func loadDemo(_ report: WeatherReport, place: Place) {
+        currentLocation = place
+        for fahrenheit in [false, true] {
+            reports[cacheKey("", fahrenheit)] = (place, report, Date())
+        }
+    }
+
     func requestLocation() {
         switch manager.authorizationStatus {
         case .notDetermined: manager.requestWhenInUseAuthorization()

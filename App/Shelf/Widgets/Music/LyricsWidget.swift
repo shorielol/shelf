@@ -53,7 +53,7 @@ struct LyricsWidget: View {
                     foreground: .white,
                     font: Theme.Typeface.display(max(15, min(26, context.unit * 0.1)), weight: .semibold),
                     focusScale: 1.0,
-                    visibleLines: context.size.height < 200 ? 3 : 7
+                    visibleLines: context.size.height < 200 ? 3 : 5
                 )
                 .padding(.top, context.size.height >= 300 ? 44 : 0)
             }
@@ -99,6 +99,8 @@ struct LyricsColumn: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .clipped()
+            .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.18), .init(color: .black, location: 0.82), .init(color: .clear, location: 1)], startPoint: .top, endPoint: .bottom))
             .animation(reduceMotion ? .easeOut(duration: 0.2) : .spring(response: 0.5, dampingFraction: 0.86), value: active)
         }
     }
@@ -119,6 +121,7 @@ struct LyricsColumn: View {
         .font(font)
         .multilineTextAlignment(.center)
         .lineLimit(3)
+        .fixedSize(horizontal: false, vertical: true)
         .foregroundStyle(foreground)
         .opacity(isActive ? 1 : max(0.12, 0.5 - Double(distance) * 0.12))
         .scaleEffect(isActive ? focusScale : 0.94)

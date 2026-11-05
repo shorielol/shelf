@@ -57,6 +57,13 @@ final class LyricsService {
         }
     }
 
+    /// Shows the given lyrics without a lookup, for `--snapshot` renders.
+    func loadDemo(_ lyrics: Lyrics, trackID: String) {
+        task?.cancel()
+        currentID = trackID
+        set(.loaded(lyrics))
+    }
+
     /// Lyric lookup time for a playback position.
     func time(for position: TimeInterval) -> TimeInterval { position + offset }
 

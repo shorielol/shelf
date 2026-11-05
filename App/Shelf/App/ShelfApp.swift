@@ -31,8 +31,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         Theme.registerFonts()
         if let directory = SnapshotRenderer.directory(from: ProcessInfo.processInfo.arguments) {
-            SnapshotRenderer.run(into: directory, model: model)
-            NSApp.terminate(nil)
+            Task {
+                await SnapshotRenderer.run(into: directory, model: model)
+                NSApp.terminate(nil)
+            }
             return
         }
         host.start()

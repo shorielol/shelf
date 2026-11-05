@@ -47,8 +47,6 @@
 	<string>Shelf is open source (MIT).</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Shelf uses your approximate location for the Weather and Sun &amp; Moon widgets.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Shelf shows photos from an album you pick in the Photo Frame widget.</string>
 	<key>NSRemindersFullAccessUsageDescription</key>
 	<string>Shelf shows and checks off your reminders in the Reminders widget.</string>
 </dict>
