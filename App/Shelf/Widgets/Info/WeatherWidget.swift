@@ -175,7 +175,7 @@ private struct WeatherSky: View {
     var body: some View {
         let index = Double(WeatherCondition.allCases.firstIndex(of: condition) ?? 0)
         let still = reduceMotion || (condition == .clear && isDay)
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: still)) { timeline in
+        TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: still)) { timeline in
             let time = still ? 40 : timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 3600)
             GeometryReader { proxy in
                 Rectangle()

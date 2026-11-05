@@ -56,7 +56,7 @@ final class CalendarStore {
         let center = NotificationCenter.default
         for name in [Notification.Name.EKEventStoreChanged, .NSCalendarDayChanged] {
             observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
-                MainActor.assumeIsolated { self?.reload() }
+                MainActor.assumeIsolated { self?.scheduleReload() }
             })
         }
         reload()
@@ -74,6 +74,18 @@ final class CalendarStore {
                 Self.logger.error("Calendar access request failed: \(error.localizedDescription, privacy: .public)")
             }
             reload()
+        }
+    }
+
+    @ObservationIgnored private var pendingReload: Task<Void, Never>?
+
+    /// Sync can post a burst of change notifications; reload once they settle.
+    private func scheduleReload() {
+        pendingReload?.cancel()
+        pendingReload = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(300))
+            guard !Task.isCancelled else { return }
+            self?.reload()
         }
     }
 
@@ -131,7 +143,7 @@ final class CalendarStore {
         let location = event.location?.trimmingCharacters(in: .whitespacesAndNewlines)
         let title = event.title ?? ""
         return CalendarEvent(
-            id: (event.eventIdentifier ?? UUID().uuidString) + "@\(event.startDate.timeIntervalSince1970)",
+            id: (event.eventIdentifier ?? "\(title)|\(event.endDate.timeIntervalSince1970)") + "@\(event.startDate.timeIntervalSince1970)",
             title: title.isEmpty ? "Untitled" : title,
             start: event.startDate,
             end: event.endDate,

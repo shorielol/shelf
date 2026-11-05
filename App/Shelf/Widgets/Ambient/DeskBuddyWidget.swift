@@ -27,7 +27,7 @@ struct DeskBuddyWidget: View {
 
     var body: some View {
         let asleep = BuddyBrain.isNight(Date())
-        TimelineView(.animation(minimumInterval: asleep ? 1.0 / 12.0 : 1.0 / 30.0, paused: reduceMotion)) { timeline in
+        TimelineView(.animation(minimumInterval: asleep ? 1.0 / 12.0 : 1.0 / 20.0, paused: reduceMotion)) { timeline in
             let pose = brain.pose(at: timeline.date, music: model.nowPlaying.isPlaying, still: reduceMotion)
             let colors = coat.colors
             Canvas { canvas, size in

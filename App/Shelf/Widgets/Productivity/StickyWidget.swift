@@ -100,6 +100,7 @@ struct StickyWidget: View {
 
     private func scheduleSave() {
         saveTask?.cancel()
+        guard draft != stored else { return }
         let text = draft
         let update = context.update
         saveTask = Task {

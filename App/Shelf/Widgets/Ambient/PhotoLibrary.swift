@@ -27,6 +27,7 @@ nonisolated enum PhotoLibrary {
 
     /// Image files in `folder` and its subfolders (packages such as a Photos library are skipped), shuffled.
     @concurrent static func imageURLs(in folder: String) async -> [URL] {
+        guard !folder.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return [] }
         let root = expand(folder)
         let keys: [URLResourceKey] = [.isRegularFileKey]
         guard let enumerator = FileManager.default.enumerator(

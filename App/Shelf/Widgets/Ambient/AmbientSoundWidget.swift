@@ -5,6 +5,8 @@ import SwiftUI
 /// and a level meter that only moves while sound is coming out.
 struct AmbientSoundWidget: View {
     let context: WidgetContext
+    /// Slider value while dragging; written to config once the drag ends.
+    @State private var dragVolume: Double?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let engine = AmbientSoundEngine.shared
 
@@ -130,10 +132,14 @@ struct AmbientSoundWidget: View {
             if !compact {
                 Image(systemName: "speaker.fill").font(.system(size: 9)).foregroundStyle(Theme.textTertiary)
             }
-            Slider(value: Binding(get: { volume }, set: { value in
-                context.update("volume", .number(value))
+            Slider(value: Binding(get: { dragVolume ?? volume }, set: { value in
+                dragVolume = value
                 if isPlaying { engine.setVolume(value) }
-            }), in: 0...1)
+            }), in: 0...1) { editing in
+                guard !editing, let dragVolume else { return }
+                context.update("volume", .number(dragVolume))
+                self.dragVolume = nil
+            }
             .controlSize(.mini)
             .tint(Theme.ember)
             .accessibilityLabel("Volume")

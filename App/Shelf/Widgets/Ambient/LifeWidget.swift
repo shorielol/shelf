@@ -16,7 +16,7 @@ struct LifeWidget: View {
         ZStack {
             Theme.graphite
             LifeDots(columns: columns, rows: rows)
-            TimelineView(reduceMotion ? .animation(minimumInterval: 1, paused: false) : .animation(minimumInterval: 1.0 / 15.0, paused: false)) { timeline in
+            TimelineView(reduceMotion ? .animation(minimumInterval: 1, paused: false) : .animation(minimumInterval: 1.0 / 8.0, paused: false)) { timeline in
                 let frame = simulation.frame(at: timeline.date, columns: columns, rows: rows, smooth: !reduceMotion)
                 Canvas { canvas, size in
                     LifeArt.draw(frame, in: &canvas, size: size)

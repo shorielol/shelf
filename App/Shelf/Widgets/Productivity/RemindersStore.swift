@@ -55,6 +55,7 @@ final class RemindersStore {
     }
 
     func reload() {
+        generation += 1
         access = EventKitAccess(EKEventStore.authorizationStatus(for: .reminder))
         guard access == .granted else {
             items = []

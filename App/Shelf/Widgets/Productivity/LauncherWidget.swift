@@ -1,4 +1,5 @@
 import AppKit
+import UniformTypeIdentifiers
 import ShelfCore
 import SwiftUI
 
@@ -198,6 +199,15 @@ struct LaunchItem: Identifiable {
         return entries.prefix(limit).enumerated().map { index, entry in item(for: entry, id: "\(index):\(entry)") }
     }
 
+    /// Folders, apps and documents are fine; scripts and executables are not, since opening one runs it.
+    private static func isSafeToOpen(_ url: URL) -> Bool {
+        guard let values = try? url.resourceValues(forKeys: [.contentTypeKey, .isDirectoryKey, .isApplicationKey]) else { return false }
+        if values.isApplication == true || values.isDirectory == true { return true }
+        guard let type = values.contentType else { return false }
+        let risky: [UTType] = [.executable, .unixExecutable, .shellScript, .script, .applicationBundle]
+        return !risky.contains { type.conforms(to: $0) }
+    }
+
     private static func item(for entry: String, id: String) -> LaunchItem {
         let workspace = NSWorkspace.shared
         if entry.lowercased().hasPrefix("https://"), let url = URL(string: entry), url.host() != nil {
@@ -208,6 +218,7 @@ struct LaunchItem: Identifiable {
             let path = (entry as NSString).expandingTildeInPath
             guard FileManager.default.fileExists(atPath: path) else { return missing(entry, id: id) }
             let url = URL(fileURLWithPath: path)
+            guard isSafeToOpen(url) else { return missing(entry, id: id) }
             return LaunchItem(id: id, name: FileManager.default.displayName(atPath: path), url: url, icon: workspace.icon(forFile: path))
         }
         guard let app = application(named: entry) else { return missing(entry, id: id) }

@@ -147,7 +147,8 @@ struct PhotoFrameWidget: View {
         GeometryReader { proxy in
             ZStack {
                 if let slide {
-                    TimelineView(.animation(minimumInterval: 1.0 / 8.0, paused: reduceMotion)) { timeline in
+                    // The pan moves well under a pixel per frame, so 2 fps looks the same as 60.
+                    TimelineView(.animation(minimumInterval: 0.5, paused: reduceMotion)) { timeline in
                         drifting(slide, in: proxy.size, at: timeline.date)
                     }
                     .id(slide.photo.url)

@@ -98,7 +98,7 @@ struct LavaLampWidget: View {
 
     private func vessel(width: CGFloat, height: CGFloat) -> some View {
         let glass = LampGlass(topRatio: 0.5)
-        return TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion || !isOn)) { timeline in
+        return TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: reduceMotion || !isOn)) { timeline in
             let t = reduceMotion || !isOn ? restTime : restTime + timeline.date.timeIntervalSince(start)
             Rectangle()
                 .fill(.black)

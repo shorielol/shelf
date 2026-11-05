@@ -51,7 +51,17 @@ final class WidgetPanel: NSPanel {
         hosting.sizingOptions = []
         hosting.autoresizingMask = [.width, .height]
         contentView = hosting
+        // Widgets spend most of the day under app windows. When a panel is fully covered, hide its
+        // content so animations stop drawing; the window server still reports when it's uncovered.
+        occlusionObserver = NotificationCenter.default.addObserver(forName: NSWindow.didChangeOcclusionStateNotification, object: self, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.contentView?.isHidden = !self.occlusionState.contains(.visible)
+            }
+        }
     }
+
+    private var occlusionObserver: NSObjectProtocol?
 
     /// Text widgets (sticky note, reminders) need key status to type.
     override var canBecomeKey: Bool { true }
