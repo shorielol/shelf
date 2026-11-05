@@ -195,7 +195,7 @@ private struct DropScene: View {
         ("turntable", CGSize(width: 214, height: 196)),
         ("lyrics", CGSize(width: 180, height: 196)),
         ("flipclock", CGSize(width: 196, height: 92)),
-        ("weather", CGSize(width: 110, height: 110)),
+        ("lavalamp", CGSize(width: 110, height: 150)),
     ]
     private let shelfY: CGFloat = 470
 
@@ -225,6 +225,7 @@ private struct DropScene: View {
                             .position(x: xPosition(index, available: available), y: (body(index)?.y ?? shelfY) - item.size.height / 2)
                     }
                 }
+                .frame(width: 1040, height: 680, alignment: .topLeading)
             }
         }
         .overlay(alignment: .bottom) {

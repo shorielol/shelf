@@ -9,6 +9,7 @@ final class OnboardingController {
     private let onClose: () -> Void
     private var window: NSWindow?
     private var closeObserver: NSObjectProtocol?
+    private var isFinishing = false
 
     init(model: AppModel, host: DesktopHost, onClose: @escaping () -> Void) {
         self.model = model
@@ -44,6 +45,8 @@ final class OnboardingController {
     }
 
     private func finish(with layout: StarterLayout?) {
+        guard !isFinishing else { return }
+        isFinishing = true
         model.onboardingCompleted = true
         guard let window else { return }
         guard let layout, let screen = window.screen ?? NSScreen.main else {
@@ -120,6 +123,13 @@ enum StarterLayout: String, CaseIterable, Identifiable {
             for (kind, size) in available {
                 let side = size.side
                 guard y + side.height <= bounds.maxY - margin else { break }
+                // Running the welcome again shouldn't stack a second copy on top of the first.
+                let spot = model.snapper.snap(Rect(x: right - side.width, y: y, width: side.width, height: side.height), in: bounds)
+                let taken = model.layout.widgets.contains { $0.kind == kind && $0.display == screen.displayKey && $0.frame == spot }
+                if taken {
+                    y += side.height + gap
+                    continue
+                }
                 if let id = model.add(kind: kind, size: size, on: screen, at: CGPoint(x: right - side.width, y: y)) { ids.append(id) }
                 y += side.height + gap
             }
